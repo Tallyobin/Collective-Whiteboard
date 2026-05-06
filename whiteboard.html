@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas — Whiteboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/whiteboard.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <header id="top-bar">
+    <a class="top-logo" href="index.html" title="Back to home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M8 12h8M12 8v8"/>
+      </svg>
+      Canvas
+    </a>
+
+    <div class="room-info">
+      <span class="room-label">Room</span>
+      <span id="room-id-display" title="Click to copy"></span>
+      <span class="copy-badge" id="copy-badge">Copied!</span>
+    </div>
+
+    <div class="top-spacer"></div>
+
+    <div class="zoom-control">
+      <button class="top-btn" id="zoom-out-btn" data-tip="Zoom out (−)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+      </button>
+      <span class="zoom-pct" id="zoom-pct" title="Click to reset zoom">100%</span>
+      <button class="top-btn" id="zoom-in-btn" data-tip="Zoom in (+)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+
+    <div id="presence-list"></div>
+  </header>
+
+  <div id="main">
+
+    <aside id="toolbar">
+
+      <button class="tool-btn active" data-tool="select" data-tip="Select  V">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 1l16 7.5L12.5 11 9.5 19 4 1z"/>
+        </svg>
+      </button>
+
+      <button class="tool-btn" data-tool="brush" data-tip="Brush  B">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+        </svg>
+      </button>
+
+      <button class="tool-btn" data-tool="eraser" data-tip="Eraser  E">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 20H7L3 16l10-10 7 7-3.5 3.5M6.5 17.5l5-5"/>
+        </svg>
+      </button>
+
+      <div class="tool-sep"></div>
+
+      <button class="tool-btn" data-tool="sticky" data-tip="Sticky Note  N">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h8l4-4V6z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="8" y1="13" x2="16" y2="13"/>
+          <line x1="8" y1="17" x2="12" y2="17"/>
+          <line x1="8" y1="9" x2="9" y2="9"/>
+        </svg>
+      </button>
+
+      <button class="tool-btn" data-tool="text" data-tip="Text  T">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="4 7 4 4 20 4 20 7"/>
+          <line x1="9" y1="20" x2="15" y2="20"/>
+          <line x1="12" y1="4" x2="12" y2="20"/>
+        </svg>
+      </button>
+
+      <button class="tool-btn" data-tool="image" data-tip="Upload Image  U">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </button>
+      <input type="file" id="image-upload-input" accept="image/*" style="display:none">
+
+      <div class="tool-sep"></div>
+
+      <button class="tool-btn" data-tool="icons" data-tip="Icons Library  I">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="2"/>
+          <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>
+        </svg>
+      </button>
+
+      <div class="tool-sep"></div>
+
+      <button class="tool-btn" data-tool="grid" data-tip="Toggle Grid  G">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+      </button>
+
+      <button class="tool-btn" data-tool="shortcuts" data-tip="Shortcuts  ?">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/>
+        </svg>
+      </button>
+    </aside>
+
+    <div id="canvas-area">
+      <canvas id="grid-canvas"></canvas>
+      <canvas id="strokes-canvas"></canvas>
+
+      <div id="viewport"></div>
+      <canvas id="overlay-canvas"></canvas>
+    </div>
+
+    <aside id="props-panel">
+
+      <div class="props-section" id="brush-props" style="display:none">
+        <div class="props-section-title">Brush</div>
+        <div class="prop-row">
+          <span class="prop-label">Color</span>
+          <div class="color-swatch" id="brush-color-swatch" style="background:#1C1A18">
+            <input type="color" id="brush-color-input" value="#1C1A18">
+          </div>
+        </div>
+        <div class="color-palette">
+          <div class="palette-swatch active" data-color="#1C1A18" style="background:#1C1A18"></div>
+          <div class="palette-swatch" data-color="#ffffff" style="background:#ffffff;border:1.5px solid #ccc"></div>
+          <div class="palette-swatch" data-color="#3D6678" style="background:#3D6678"></div>
+          <div class="palette-swatch" data-color="#C0392B" style="background:#C0392B"></div>
+          <div class="palette-swatch" data-color="#D4824A" style="background:#D4824A"></div>
+          <div class="palette-swatch" data-color="#2D6B48" style="background:#2D6B48"></div>
+          <div class="palette-swatch" data-color="#6B5B95" style="background:#6B5B95"></div>
+          <div class="palette-swatch" data-color="#F5C842" style="background:#F5C842"></div>
+          <div class="palette-swatch" data-color="#E8838F" style="background:#E8838F"></div>
+          <div class="palette-swatch" data-color="#85C1E9" style="background:#85C1E9"></div>
+        </div>
+        <div class="prop-row" style="margin-top:12px">
+          <span class="prop-label">Size</span>
+          <span class="size-value" id="brush-size-val">4</span>
+        </div>
+        <input type="range" class="size-slider" id="brush-size" min="1" max="40" value="4">
+      </div>
+
+      <div class="props-section" id="sticky-props" style="display:none">
+        <div class="props-section-title">Sticky Note</div>
+        <div class="prop-row">
+          <span class="prop-label">Color</span>
+        </div>
+        <div class="color-palette sticky-color-palette">
+          <div class="sticky-color-swatch active" data-color="#FFF3B0" style="background:#FFF3B0;border:1.5px solid #ccc"></div>
+          <div class="sticky-color-swatch" data-color="#C8DFF5" style="background:#C8DFF5;border:1.5px solid #ccc"></div>
+          <div class="sticky-color-swatch" data-color="#C8E8C8" style="background:#C8E8C8;border:1.5px solid #ccc"></div>
+          <div class="sticky-color-swatch" data-color="#F5C8D8" style="background:#F5C8D8;border:1.5px solid #ccc"></div>
+          <div class="sticky-color-swatch" data-color="#DDD0F0" style="background:#DDD0F0;border:1.5px solid #ccc"></div>
+          <div class="sticky-color-swatch" data-color="#F5DCC8" style="background:#F5DCC8;border:1.5px solid #ccc"></div>
+        </div>
+      </div>
+
+      <div class="props-section" id="text-props" style="display:none">
+        <div class="props-section-title">Text</div>
+        <div class="prop-row">
+          <span class="prop-label">Color</span>
+          <div class="color-swatch" style="background:#1C1A18">
+            <input type="color" id="text-color-input" value="#1C1A18">
+          </div>
+        </div>
+        <div class="prop-row" style="margin-top:8px">
+          <span class="prop-label">Size</span>
+          <span class="size-value" id="text-size-val">18</span>
+        </div>
+        <input type="range" class="size-slider" id="text-font-size" min="10" max="96" value="18">
+        <div class="prop-row" style="margin-top:10px">
+          <span class="prop-label">Font</span>
+        </div>
+        <select class="font-select" id="text-font-family" style="margin-top:4px">
+          <option value="Outfit">Outfit</option>
+          <option value="Lora">Lora</option>
+          <option value="JetBrains Mono">JetBrains Mono</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Arial">Arial</option>
+          <option value="Impact">Impact</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Verdana">Verdana</option>
+        </select>
+      </div>
+
+      <div class="props-section" id="icon-props" style="display:none">
+        <div class="props-section-title">Icon</div>
+        <div class="prop-row">
+          <span class="prop-label">Color</span>
+          <div class="color-swatch" style="background:#1C1A18">
+            <input type="color" id="icon-color-input" value="#1C1A18">
+          </div>
+        </div>
+        <div class="prop-row" style="margin-top:8px">
+          <span class="prop-label">Size</span>
+          <span class="size-value" id="icon-size-val">48</span>
+        </div>
+        <input type="range" class="size-slider" id="icon-size" min="16" max="200" value="48">
+      </div>
+
+      <div class="props-section" id="canvas-props">
+        <div class="props-section-title">Canvas</div>
+        <div class="prop-row">
+          <span class="prop-label">Background</span>
+          <div class="color-swatch" id="bg-color-swatch" style="background:#F0EEE9">
+            <input type="color" id="bg-color-input" value="#F0EEE9">
+          </div>
+        </div>
+        <div class="color-palette bg-color-palette" style="margin-top:8px">
+          <div class="bg-color-swatch palette-swatch" data-color="#F0EEE9" style="background:#F0EEE9;border:1.5px solid #ccc"></div>
+          <div class="bg-color-swatch palette-swatch" data-color="#FFFFFF" style="background:#FFFFFF;border:1.5px solid #ccc"></div>
+          <div class="bg-color-swatch palette-swatch" data-color="#1A1917" style="background:#1A1917"></div>
+          <div class="bg-color-swatch palette-swatch" data-color="#E8F4F8" style="background:#E8F4F8;border:1.5px solid #ccc"></div>
+          <div class="bg-color-swatch palette-swatch" data-color="#F5F0E8" style="background:#F5F0E8;border:1.5px solid #ccc"></div>
+          <div class="bg-color-swatch palette-swatch" data-color="#E8F0E8" style="background:#E8F0E8;border:1.5px solid #ccc"></div>
+        </div>
+      </div>
+
+    </aside>
+
+  </div>
+</div>
+
+<div class="modal-backdrop" id="icons-modal-backdrop">
+  <div class="modal" id="icons-modal">
+    <div class="modal-header">
+      <h3>Icons Library</h3>
+      <button class="modal-close">×</button>
+    </div>
+    <div class="modal-search">
+      <input type="text" id="icon-search" placeholder="Search icons…" autocomplete="off">
+    </div>
+    <div style="padding:10px 16px 0; border-bottom:1px solid var(--border-light)">
+      <div class="icons-categories">
+        <button class="icon-cat-btn active" data-cat="all">All</button>
+        <button class="icon-cat-btn" data-cat="Arrows">Arrows</button>
+        <button class="icon-cat-btn" data-cat="Shapes">Shapes</button>
+        <button class="icon-cat-btn" data-cat="UI">UI</button>
+        <button class="icon-cat-btn" data-cat="Communication">Comm</button>
+        <button class="icon-cat-btn" data-cat="Nature">Nature</button>
+        <button class="icon-cat-btn" data-cat="Objects">Objects</button>
+        <button class="icon-cat-btn" data-cat="Numbers">Math</button>
+        <button class="icon-cat-btn" data-cat="Tools">Tools</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="icons-grid" id="icons-grid"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="shortcuts-modal-backdrop">
+  <div class="modal" id="shortcuts-modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3>Keyboard Shortcuts</h3>
+      <button class="modal-close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="shortcut-row"><span class="shortcut-desc">Select tool</span><div class="shortcut-keys"><kbd>V</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Brush tool</span><div class="shortcut-keys"><kbd>B</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Eraser tool</span><div class="shortcut-keys"><kbd>E</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Text tool</span><div class="shortcut-keys"><kbd>T</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Sticky note</span><div class="shortcut-keys"><kbd>N</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Icons library</span><div class="shortcut-keys"><kbd>I</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Toggle grid</span><div class="shortcut-keys"><kbd>G</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">This panel</span><div class="shortcut-keys"><kbd>?</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Undo</span><div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>Z</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Delete selected</span><div class="shortcut-keys"><kbd>Del</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Deselect / cancel</span><div class="shortcut-keys"><kbd>Esc</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Pan canvas</span><div class="shortcut-keys"><kbd>Space</kbd><kbd>Drag</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Zoom in/out</span><div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>±</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Scroll to zoom</span><div class="shortcut-keys"><kbd>Wheel</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Reset zoom</span><div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>0</kbd></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Copy Room ID</span><div class="shortcut-keys">Click ID</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/icons-data.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/cursors.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/whiteboard.js"></script>
+</body>
+</html>
+

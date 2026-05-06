@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas — Collaborative Whiteboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/landing.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <div class="landing">
+
+    <header class="landing-header">
+      <a class="logo" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M8 12h8M12 8v8"/>
+        </svg>
+        <span class="logo-name">Canvas</span>
+      </a>
+    </header>
+
+    <main class="landing-main">
+
+      <div class="hero">
+        <h1 class="hero-title">Infinite<br><em>Collaborative</em><br>Whiteboard</h1>
+        <p class="hero-sub">Draw, write, and think together — in real time</p>
+      </div>
+
+      <div class="cards">
+
+        <div class="card" id="create-card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </div>
+          <h2>New Room</h2>
+          <p>Start a fresh whiteboard and share the Room ID to invite others.</p>
+          <div class="card-form">
+            <input type="text" id="create-name" class="input-field" placeholder="Your name" maxlength="32" autocomplete="off">
+            <button class="btn-primary" id="create-btn">
+              Create Room
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+            <div class="error-msg" id="create-error"></div>
+          </div>
+        </div>
+
+        <div class="card" id="join-card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+            </svg>
+          </div>
+          <h2>Join Room</h2>
+          <p>Enter a Room ID shared with you to collaborate in real time.</p>
+          <div class="card-form">
+            <input type="text" id="join-name" class="input-field" placeholder="Your name" maxlength="32" autocomplete="off">
+            <input type="text" id="join-id" class="input-field mono" placeholder="ROOM-ID" maxlength="32" autocomplete="off" spellcheck="false">
+            <button class="btn-outline" id="join-btn">
+              Join Room
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+            <div class="error-msg" id="join-error"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="recent" id="recent-rooms" style="display:none">
+        <h3>Recent Rooms</h3>
+        <div class="recent-list" id="recent-list"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Connecting…</div>
+  </div>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/room.js"></script>
+</body>
+</html>
+
